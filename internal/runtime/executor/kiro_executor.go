@@ -32,9 +32,9 @@ const (
 	kiroGeneratePath       = "/v1internal:generateContent"
 	kiroCountTokensPath    = "/v1internal:countTokens"
 	kiroAuthType           = "kiro"
-	kiroRefreshSkew        = 3000 * time.Second
+	kiroRefreshSkew        = 300 * time.Second // 5 minutes before expiry
 	kiroAPIUserAgent       = "google-api-nodejs-client/9.15.1"
-	kiroAPIClient          = "google-cloud-sdk vscode_cloudeshelleditor/0.1"
+	kiroAPIClient          = "google-cloud-sdk vscode_cloudshell_editor/0.1"
 	kiroClientMetadata     = `{"ideType":"IDE_UNSPECIFIED","platform":"PLATFORM_UNSPECIFIED","pluginType":"GEMINI"}`
 )
 
