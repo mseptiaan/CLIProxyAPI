@@ -16,11 +16,15 @@ import (
 )
 
 const (
+	// Kiro authentication endpoint (from kiro.md - Getting the Refresh Token section)
 	kiroRefreshTokenURL = "https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken"
+	
+	// Kiro API endpoints - uses Google Cloud's Code Assist API as backend
+	// (Kiro IDE proxies AWS CodeWhisperer through Google's infrastructure)
 	kiroAPIEndpoint     = "https://cloudcode-pa.googleapis.com"
 	kiroAPIVersion      = "v1internal"
 	kiroAPIUserAgent    = "google-api-nodejs-client/9.15.1"
-	kiroAPIClient       = "google-cloud-sdk vscode_cloudshelleditor/0.1"
+	kiroAPIClient       = "google-cloud-sdk vscode_cloudshell_editor/0.1"
 	kiroClientMetadata  = `{"ideType":"IDE_UNSPECIFIED","platform":"PLATFORM_UNSPECIFIED","pluginType":"GEMINI"}`
 )
 
@@ -40,7 +44,8 @@ func (KiroAuthenticator) RefreshLead() *time.Duration {
 }
 
 // Login performs authentication using a refresh token from Kiro IDE.
-// The refresh token is typically obtained by intercepting Kiro IDE traffic.
+// The refresh token is obtained by intercepting Kiro IDE traffic as described in kiro.md.
+// See: https://github.com/Jwadow/kiro-openai-gateway - Getting the Refresh Token section
 func (KiroAuthenticator) Login(ctx context.Context, cfg *config.Config, opts *LoginOptions) (*coreauth.Auth, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("cliproxy auth: configuration is required")
@@ -181,8 +186,10 @@ func exchangeKiroRefreshToken(ctx context.Context, refreshToken string, httpClie
 	return &token, nil
 }
 
-// fetchKiroProjectID retrieves the project ID for the authenticated user via loadCodeAssist.
-// This uses the same approach as Kiro OpenAI Gateway to get the cloudaicompanionProject.
+// fetchKiroProjectID retrieves the project ID for the authenticated user via loadCodeAssist API.
+// This implementation is based on kiro.md which describes how Kiro IDE authenticates with
+// AWS CodeWhisperer through Google Cloud's Code Assist backend (cloudcode-pa.googleapis.com).
+// The Kiro IDE uses this hybrid approach: AWS CodeWhisperer models via Google's API infrastructure.
 func fetchKiroProjectID(ctx context.Context, accessToken string, httpClient *http.Client) (string, error) {
 	// Call loadCodeAssist to get the project
 	loadReqBody := map[string]any{

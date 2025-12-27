@@ -1,6 +1,12 @@
 // Package executor provides runtime execution capabilities for various AI service providers.
-// This file implements the Kiro executor that proxies requests to the Kiro IDE
-// upstream using refresh tokens obtained from the Kiro IDE.
+// This file implements the Kiro executor based on the kiro-openai-gateway specification (kiro.md).
+// 
+// Kiro IDE Integration:
+// - Uses refresh tokens from Kiro IDE (intercepted from prod.us-east-1.auth.desktop.kiro.dev)
+// - Accesses AWS CodeWhisperer models (Claude, Gemini) via Google Cloud's Code Assist API
+// - Endpoint: cloudcode-pa.googleapis.com/v1internal (hybrid AWS/Google infrastructure)
+// 
+// Reference: https://github.com/Jwadow/kiro-openai-gateway
 package executor
 
 import (
@@ -25,20 +31,39 @@ import (
 )
 
 const (
+	// Kiro authentication - refresh token endpoint (from kiro.md)
 	kiroRefreshTokenURL    = "https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken"
+	
+	// Kiro API configuration (kiro.md specifies Kiro uses Google's Code Assist backend)
+	// Unlike direct AWS CodeWhisperer API (q.us-east-1.amazonaws.com), Kiro IDE routes
+	// through Google Cloud's infrastructure for AWS CodeWhisperer model access
 	kiroBaseURL            = "https://cloudcode-pa.googleapis.com"
 	kiroAPIVersion         = "v1internal"
 	kiroStreamPath         = "/v1internal:streamGenerateContent"
 	kiroGeneratePath       = "/v1internal:generateContent"
 	kiroCountTokensPath    = "/v1internal:countTokens"
+	
 	kiroAuthType           = "kiro"
-	kiroRefreshSkew        = 300 * time.Second // 5 minutes before expiry
+	kiroRefreshSkew        = 300 * time.Second // 5 minutes before expiry (Smart token management from kiro.md)
+	
+	// Headers matching kiro-openai-gateway implementation
 	kiroAPIUserAgent       = "google-api-nodejs-client/9.15.1"
 	kiroAPIClient          = "google-cloud-sdk vscode_cloudshell_editor/0.1"
 	kiroClientMetadata     = `{"ideType":"IDE_UNSPECIFIED","platform":"PLATFORM_UNSPECIFIED","pluginType":"GEMINI"}`
 )
 
 // KiroExecutor proxies requests to the Kiro upstream.
+//
+// Supported Models (from kiro.md Available Models section):
+//   - Claude Opus 4.5, 4.5-20251101 (Top-tier model)
+//   - Claude Sonnet 4.5, 4.5-20250929 (Enhanced model)
+//   - Claude Sonnet 4, 4-20250514 (Balanced model)
+//   - Claude Haiku 4.5 (Fast model)
+//   - Claude 3.7 Sonnet 20250219 (Legacy model)
+//
+// Architecture:
+//   Kiro IDE provides access to AWS CodeWhisperer models through Google Cloud's
+//   Code Assist API infrastructure (hybrid approach described in kiro.md)
 type KiroExecutor struct {
 	cfg *config.Config
 }
