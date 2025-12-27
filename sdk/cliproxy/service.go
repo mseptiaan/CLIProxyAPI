@@ -371,6 +371,8 @@ func (s *Service) ensureExecutorsForAuth(a *coreauth.Auth) {
 		return
 	case "antigravity":
 		s.coreManager.RegisterExecutor(executor.NewAntigravityExecutor(s.cfg))
+	case "kiro":
+		s.coreManager.RegisterExecutor(executor.NewKiroExecutor(s.cfg))
 	case "claude":
 		s.coreManager.RegisterExecutor(executor.NewClaudeExecutor(s.cfg))
 	case "codex":
